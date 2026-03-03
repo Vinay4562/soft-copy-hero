@@ -110,6 +110,14 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 
+  html, body, #root {
+    @apply w-full max-w-full overflow-x-hidden;
+  }
+
+  img, video {
+    @apply max-w-full h-auto;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-semibold tracking-tight;
   }

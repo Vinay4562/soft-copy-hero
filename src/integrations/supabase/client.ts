@@ -25,10 +25,10 @@ export const supabase: SupabaseClient<Database> | SupabaseFunctionsOnly = isConf
         autoRefreshToken: true,
       }
     })
-  : {
+  : ({
       functions: {
         invoke: async () => {
           throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your .env.');
         }
       }
-    };
+    } as unknown as SupabaseFunctionsOnly);
