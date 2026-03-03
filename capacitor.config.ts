@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.vintech.softcopyhero',
-  appName: 'SoftCopy Hero',
+  appName: 'VinTech AI Doc',
   webDir: 'dist',
   server: {
     androidScheme: 'https'
