@@ -1,0 +1,12 @@
+{
+  "android": {
+    "icon": {
+      "source": "public/App_Icon.png"
+    },
+    "splash": {
+      "source": "public/App_Icon.png",
+      "backgroundColor": "#0b1224",
+      "darkBackgroundColor": "#0b1224"
+    }
+  }
+}
