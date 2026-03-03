@@ -111,7 +111,14 @@
   }
 
   html, body, #root {
-    @apply w-full max-w-full overflow-x-hidden;
+    @apply w-full max-w-full;
+  }
+
+  @media (max-width: 640px) {
+    html, body, #root {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
   img, video {
