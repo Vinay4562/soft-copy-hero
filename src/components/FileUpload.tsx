@@ -89,7 +89,7 @@ export const FileUpload = forwardRef<HTMLDivElement, FileUploadProps>(({ onFileS
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       className={cn(
-        "relative border-2 border-dashed rounded-xl p-12 transition-all duration-300 cursor-pointer group",
+        "relative border-2 border-dashed rounded-xl p-8 md:p-12 transition-all duration-300 cursor-pointer group w-full",
         isDragOver
           ? "border-primary bg-primary/5 scale-[1.02]"
           : "border-border hover:border-primary/50 hover:bg-muted/50"

@@ -52,14 +52,14 @@ export const ExportOptions = forwardRef<HTMLDivElement, ExportOptionsProps>(({ t
     <div ref={ref} className="bg-card rounded-xl shadow-card border border-border p-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
       <h3 className="font-semibold text-foreground mb-4">Export Format</h3>
       
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
         {formats.map((format) => (
           <button
             key={format.id}
             onClick={() => setSelectedFormat(format.id)}
             disabled={disabled}
             className={cn(
-              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 w-full",
               selectedFormat === format.id
                 ? "border-primary bg-primary/5 shadow-md"
                 : "border-border hover:border-primary/30 hover:bg-muted/50",
@@ -131,14 +131,14 @@ async function generateDocx(text: string): Promise<Blob> {
 
   docStruct.nodes.forEach((node) => {
     if (node.type === "heading") {
-      const levelMap: Record<number, HeadingLevel> = {
+      const levelMap = {
         1: HeadingLevel.TITLE,
         2: HeadingLevel.HEADING_1,
         3: HeadingLevel.HEADING_2,
         4: HeadingLevel.HEADING_3,
         5: HeadingLevel.HEADING_4,
         6: HeadingLevel.HEADING_5,
-      };
+      } as const;
       children.push(
         new Paragraph({
           text: node.text,
