@@ -1,3 +1,4 @@
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -5,14 +6,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+// @ts-ignore
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { imageBase64, mimeType } = await req.json();
+    const { imageBase64, mimeType, customApiKey } = await req.json();
     
+    console.log("Processing request. customApiKey provided:", !!customApiKey);
+
     if (!imageBase64) {
       return new Response(
         JSON.stringify({ error: "No image data provided" }),
@@ -20,23 +24,29 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    // @ts-ignore
+    const systemApiKey = Deno.env.get("GEMINI_API_KEY");
+    const GEMINI_API_KEY = customApiKey || systemApiKey;
+    
+    if (!GEMINI_API_KEY) {
+      console.error("No API key available (system or custom)");
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    console.log("Using API Key starting with:", GEMINI_API_KEY.substring(0, 6));
+
+    // Use Google Gemini API directly
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
+        contents: [
           {
-            role: "system",
-            content: `You are an expert OCR and document extraction assistant. Your task is to extract ALL text content from the provided document image with maximum accuracy. 
+            parts: [
+              {
+                text: `You are an expert OCR and document extraction assistant. Your task is to extract ALL text content from the provided document image with maximum accuracy. 
 
 Instructions:
 1. Extract every word, number, and character visible in the document
@@ -47,50 +57,46 @@ Instructions:
 6. If text is blurry or unclear, provide your best interpretation with [unclear] notation
 7. Do NOT add any commentary or explanation - only output the extracted text
 8. Maintain the document's logical reading order (left to right, top to bottom)`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Please extract all text from this document image. Preserve the formatting, structure, and layout as accurately as possible."
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType || 'image/png'};base64,${imageBase64}`
+                inlineData: {
+                  mimeType: mimeType || 'image/png',
+                  data: imageBase64
                 }
               }
             ]
           }
         ],
-        max_tokens: 8000,
+        generationConfig: {
+          maxOutputTokens: 8000,
+        }
       }),
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API error:", response.status, errorData);
+      
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          JSON.stringify({ error: "API limit reached. Please try again in a moment." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
+      if (response.status === 403 || response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "Service quota exceeded. Please try again later." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Invalid API key" }),
+          { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Failed to process document" }),
+        JSON.stringify({ error: "Failed to process document with Gemini" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const extractedText = data.choices?.[0]?.message?.content || "";
+    const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     return new Response(
       JSON.stringify({ text: extractedText }),

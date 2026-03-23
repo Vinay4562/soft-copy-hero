@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ProcessingState {
@@ -45,20 +44,34 @@ export function useDocumentProcessor() {
         progress: 50,
       }));
       
-      const { data, error } = await supabase.functions.invoke('process-document', {
-        body: {
+      const customApiKey = localStorage.getItem("GEMINI_API_KEY");
+      
+      const response = await fetch('/api/process-document', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           imageBase64: base64,
           mimeType: 'application/pdf',
-        },
+          customApiKey: customApiKey || undefined,
+        }),
       });
 
-      if (error) {
-        console.error('Processing error:', error);
-        throw new Error(error.message || 'Failed to process document');
-      }
+      const data = await response.json();
 
-      if (data?.error) {
-        throw new Error(data.error);
+      if (!response.ok) {
+        console.error('Processing error:', data.error);
+        const status = response.status;
+        const message = data.error || "";
+        
+        if (status === 429 || message.includes('429') || message.includes('limit reached')) {
+          throw new Error("LIMIT_REACHED");
+        }
+        if (status === 401 || status === 403 || message.includes('401') || message.includes('403') || message.includes('Invalid API key')) {
+          throw new Error("INVALID_KEY");
+        }
+        throw new Error(message || 'Failed to process document');
       }
 
       setState(prev => ({ ...prev, progress: 100 }));
@@ -72,7 +85,27 @@ export function useDocumentProcessor() {
       
     } catch (error) {
       console.error('Document processing failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to process document');
+      const errorMessage = error instanceof Error ? error.message : "";
+      
+      if (errorMessage === "LIMIT_REACHED") {
+        toast.error("Gemini API limit reached. Please update your API key in Settings.", {
+          duration: 10000,
+          action: {
+            label: "Settings",
+            onClick: () => window.dispatchEvent(new CustomEvent('switch-to-settings-tab'))
+          }
+        });
+      } else if (errorMessage === "INVALID_KEY") {
+        toast.error("Invalid Gemini API key. Please check your settings.", {
+          duration: 10000,
+          action: {
+            label: "Settings",
+            onClick: () => window.dispatchEvent(new CustomEvent('switch-to-settings-tab'))
+          }
+        });
+      } else {
+        toast.error(errorMessage || 'Failed to process document');
+      }
     } finally {
       setState(prev => ({ ...prev, isProcessing: false }));
     }
