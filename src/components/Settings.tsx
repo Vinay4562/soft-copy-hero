@@ -57,7 +57,7 @@ export const Settings = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Your key is stored locally in your browser and used for processing via Supabase Edge Functions.
+              Your key is stored locally in your browser and used for processing via Vercel Serverless Functions.
             </p>
           </div>
         </CardContent>
