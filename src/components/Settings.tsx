@@ -24,7 +24,7 @@ export const Settings = () => {
 
   const aiDetails = {
     provider: "Google Gemini API",
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
     status: savedKey ? "Custom Key Configured" : "Using System Default",
   };
 

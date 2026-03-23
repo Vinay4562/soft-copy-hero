@@ -36,8 +36,8 @@ serve(async (req: Request) => {
     console.log("Using API Key starting with:", GEMINI_API_KEY.substring(0, 6));
 
     // Use Google Gemini API directly
-    // Using v1beta version and gemini-1.5-flash-latest alias
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
+    // Using verified model 'gemini-2.5-flash' on stable 'v1' endpoint
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
