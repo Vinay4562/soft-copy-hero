@@ -18,10 +18,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "No image data provided" });
     }
 
+    // Check payload size (Vercel has a 4.5MB limit for serverless functions)
+    const sizeInBytes = Buffer.from(imageBase64, 'base64').length;
+    const sizeInMB = sizeInBytes / (1024 * 1024);
+    if (sizeInMB > 4.2) {
+      return res.status(413).json({ error: `File too large (${sizeInMB.toFixed(2)}MB). Please use a file under 4MB.` });
+    }
+
     const GEMINI_API_KEY = customApiKey || process.env.GEMINI_API_KEY;
     
     if (!GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not configured" });
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured in Vercel environment" });
     }
 
     // Call Google Gemini API directly using Node.js fetch (Node 18+)
@@ -62,9 +69,10 @@ Instructions:
       }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Gemini API error:", response.status, errorData);
+      console.error("Gemini API error details:", JSON.stringify(data, null, 2));
       
       if (response.status === 429) {
         return res.status(429).json({ error: "API limit reached" });
@@ -72,10 +80,12 @@ Instructions:
       if (response.status === 403 || response.status === 401) {
         return res.status(401).json({ error: "Invalid API key" });
       }
-      return res.status(500).json({ error: "Failed to process document with Gemini" });
+      
+      // Pass the specific Gemini error message if available
+      const geminiMessage = data.error?.message || JSON.stringify(data) || "Failed to process document with Gemini";
+      return res.status(500).json({ error: geminiMessage });
     }
 
-    const data = await response.json();
     const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     return res.status(200).json({ text: extractedText });
