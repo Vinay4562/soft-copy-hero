@@ -44,16 +44,8 @@ export function useDocumentProcessor() {
         progress: 50,
       }));
       
-      const COMPROMISED_KEY = "AIzaSyDZ2mKbasmvO9zmxVlRZ63U0X41U13aW0U";
       const storedKey = localStorage.getItem("GEMINI_API_KEY");
-      
-      // If we find the compromised key in localStorage, clear it and use system default
-      if (storedKey && storedKey.trim() === COMPROMISED_KEY) {
-        localStorage.removeItem("GEMINI_API_KEY");
-        toast.info("Clearing compromised custom API key. Using system default.");
-      }
-      
-      const customApiKey = (storedKey && storedKey.trim().length > 5 && storedKey.trim() !== COMPROMISED_KEY) ? storedKey.trim() : undefined;
+      const customApiKey = (storedKey && storedKey.trim().length > 5) ? storedKey.trim() : undefined;
       
       const response = await fetch('/api/process-document', {
         method: 'POST',
@@ -78,7 +70,7 @@ export function useDocumentProcessor() {
         if (status === 429 || (typeof message === 'string' && (message.includes('429') || message.includes('limit reached')))) {
           throw new Error("LIMIT_REACHED");
         }
-        if (status === 401 || status === 403 || (typeof message === 'string' && (message.includes('401') || message.includes('403') || message.includes('Invalid API key') || message.includes('API Key not found')))) {
+        if (status === 401 || status === 403 || (typeof message === 'string' && (message.includes('401') || message.includes('403') || message.includes('API key not valid') || message.includes('API Key not found')))) {
           throw new Error("INVALID_KEY");
         }
         throw new Error(message || 'Failed to process document');

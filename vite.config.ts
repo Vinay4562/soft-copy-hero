@@ -14,6 +14,39 @@ export default defineConfig(({ mode }) => {
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
         console.log(`[Proxy] Request received: ${req.method} ${req.url}`);
+        
+        // Handle connection test
+        if (req.url === "/api/test-connection" && req.method === "POST") {
+          let body = "";
+          req.on("data", (chunk) => body += chunk);
+          req.on("end", async () => {
+            try {
+              const { customApiKey } = JSON.parse(body || "{}");
+              const apiKey = (customApiKey || env.GEMINI_API_KEY || "").trim();
+              
+              if (!apiKey) {
+                res.statusCode = 400;
+                res.end(JSON.stringify({ error: "No API key provided" }));
+                return;
+              }
+
+              const response = await globalThis.fetch(
+                `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash?key=${apiKey}`,
+                { method: "GET" }
+              );
+
+              const data = await response.json() as any;
+              res.setHeader("Content-Type", "application/json");
+              res.statusCode = response.status;
+              res.end(JSON.stringify(data));
+            } catch (error: any) {
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: error.message }));
+            }
+          });
+          return;
+        }
+
         if ((req.url === "/api/process-document" || req.url?.startsWith("/api/process-document")) && req.method === "POST") {
           let body = "";
           req.on("data", (chunk) => {
@@ -27,13 +60,12 @@ export default defineConfig(({ mode }) => {
                 return;
               }
               const { imageBase64, mimeType, customApiKey } = JSON.parse(body);
-                const COMPROMISED_KEY = "AIzaSyDZ2mKbasmvO9zmxVlRZ63U0X41U13aW0U";
                 
                 console.log(`[Proxy] customApiKey from body: ${customApiKey ? (customApiKey.substring(0, 10) + "...") : "none"}`);
                 console.log(`[Proxy] env.GEMINI_API_KEY: ${env.GEMINI_API_KEY ? (env.GEMINI_API_KEY.substring(0, 10) + "...") : "none"}`);
 
-                // Key selection logic: prioritize non-compromised custom key, fallback to env
-                let apiKey = (typeof customApiKey === 'string' && customApiKey.length > 10 && customApiKey.trim() !== COMPROMISED_KEY) 
+                // Key selection logic: prioritize custom key if valid, fallback to env
+                let apiKey = (typeof customApiKey === 'string' && customApiKey.length > 10) 
                   ? customApiKey.trim() 
                   : (env.GEMINI_API_KEY || "").trim();
 
