@@ -46,14 +46,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 text: `You are an expert OCR and document extraction assistant. Your task is to extract ALL text content from the provided document image with maximum accuracy. 
 
 Instructions:
-1. Extract every word, number, and character visible in the document
-2. Preserve the original formatting as much as possible (paragraphs, lists, tables)
-3. For tables, represent them using markdown table format
-4. For lists, use proper bullet points or numbered lists
-5. Preserve headers and subheaders hierarchy
-6. If text is blurry or unclear, provide your best interpretation with [unclear] notation
-7. Do NOT add any commentary or explanation - only output the extracted text
-8. Maintain the document's logical reading order (left to right, top to bottom)`
+1. Extract every word, number, and character visible in the document.
+2. Preserve the original formatting as much as possible (paragraphs, lists, tables).
+3. **CRITICAL: FOR TABLES, you MUST extract ALL data from every row and column.** 
+   - Represent tables using standard Markdown table format.
+   - Ensure that even long text within table cells is fully extracted and placed in the correct cell.
+   - Do NOT skip any rows or truncate cell content.
+   - If a table spans multiple pages, continue the Markdown table seamlessly.
+4. For lists, use proper bullet points or numbered lists.
+5. Preserve headers and subheaders hierarchy.
+6. If text is blurry or unclear, provide your best interpretation with [unclear] notation.
+7. Do NOT add any commentary or explanation - only output the extracted text.
+8. Maintain the document's logical reading order (left to right, top to bottom).
+9. For documents with multiple pages, clearly mark page breaks with "==Start of OCR for page X==" and "==End of OCR for page X==".`
               },
               {
                 inlineData: {

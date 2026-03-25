@@ -17,15 +17,24 @@ export const Settings = () => {
   }, []);
 
   const handleSave = () => {
-    localStorage.setItem("GEMINI_API_KEY", apiKey);
-    setSavedKey(apiKey);
+    const trimmedKey = apiKey.trim();
+    localStorage.setItem("GEMINI_API_KEY", trimmedKey);
+    setApiKey(trimmedKey);
+    setSavedKey(trimmedKey);
     toast.success("Gemini API Key saved successfully!");
+  };
+
+  const handleClear = () => {
+    localStorage.removeItem("GEMINI_API_KEY");
+    setApiKey("");
+    setSavedKey("");
+    toast.info("Custom API key cleared. Using system default.");
   };
 
   const aiDetails = {
     provider: "Google Gemini API",
     model: "gemini-2.5-flash",
-    status: savedKey ? "Custom Key Configured" : "Using System Default",
+    status: savedKey ? "Custom Key Configured" : "Using System Default (Recommended)",
   };
 
   return (
@@ -43,21 +52,29 @@ export const Settings = () => {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="api-key">Gemini API Key</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 id="api-key"
                 type="password"
                 placeholder="Enter your Gemini API key..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
+                className="flex-grow"
               />
-              <Button onClick={handleSave} className="flex items-center gap-2">
-                <Save className="w-4 h-4" />
-                Save
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleSave} className="flex-1 sm:flex-none flex items-center gap-2">
+                  <Save className="w-4 h-4" />
+                  Save
+                </Button>
+                {savedKey && (
+                  <Button onClick={handleClear} variant="outline" className="flex-1 sm:flex-none">
+                    Clear
+                  </Button>
+                )}
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Your key is stored locally in your browser and used for processing via Vercel Serverless Functions.
+              Your key is stored locally in your browser. Leave blank to use the system's default key.
             </p>
           </div>
         </CardContent>
